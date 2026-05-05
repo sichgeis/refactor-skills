@@ -1,6 +1,6 @@
 ---
 name: gm-refactor
-description: Refactor code toward readable, pragmatic structure using the "Goldene Mitte" style: preserve visible control flow, extract meaningful domain actions and noisy stable details, avoid trivial helper indirection, reduce surprising mutation, and verify behavior with focused tests. Use when the user asks for refactoring, readable refactoring, cleanup, simplification, decomposition, reducing complexity, or "goldene Mitte" refactor work.
+description: 'Refactor code toward readable, pragmatic structure using the "Goldene Mitte" style: preserve visible control flow, extract meaningful domain actions and noisy stable details, avoid trivial helper indirection, reduce surprising mutation, and verify behavior with focused tests. Use when the user asks for refactoring, readable refactoring, cleanup, simplification, decomposition, reducing complexity, or "goldene Mitte" refactor work.'
 ---
 
 # GM Refactor
