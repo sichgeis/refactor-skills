@@ -1,0 +1,104 @@
+version: "3"
+
+vars:
+  SKILL_NAME: gm-refactor
+  COMMAND_NAME: gm-refactor
+  HOME_DIR:
+    sh: printf %s "$HOME"
+  BUILD_ROOT: dist
+  BUILD_DIR: "{{.BUILD_ROOT}}/{{.SKILL_NAME}}"
+  CODEX_SKILLS_DIR: "{{.HOME_DIR}}/.codex/skills"
+  CODEX_PROMPTS_DIR: "{{.HOME_DIR}}/.codex/prompts"
+  CLAUDE_SKILLS_DIR: "{{.HOME_DIR}}/.claude/skills"
+  FORGE_SKILLS_DIR: "{{.HOME_DIR}}/.forge/skills"
+  CLAUDE_COMMANDS_DIR: "{{.HOME_DIR}}/.claude/commands"
+
+tasks:
+  build:
+    desc: Build the agent-agnostic skill package
+    run: once
+    cmds:
+      - rm -rf "{{.BUILD_DIR}}"
+      - mkdir -p "{{.BUILD_DIR}}/commands"
+      - cp SKILL.md "{{.BUILD_DIR}}/"
+      - cp "commands/{{.COMMAND_NAME}}.md" "{{.BUILD_DIR}}/commands/"
+
+  install:
+    desc: Install the skill for Codex, Claude Code, and ForgeCode, plus compatibility wrappers
+    cmds:
+      - task: build
+      - task: install:codex
+      - task: install:claude
+      - task: install:forge
+      - task: install:claude-command
+
+  install:codex:
+    desc: Install the skill and deprecated custom-prompt wrapper for Codex
+    deps: [build]
+    cmds:
+      - mkdir -p "{{.CODEX_SKILLS_DIR}}"
+      - mkdir -p "{{.CODEX_PROMPTS_DIR}}"
+      - rm -rf "{{.CODEX_SKILLS_DIR}}/{{.SKILL_NAME}}"
+      - cp -R "{{.BUILD_DIR}}" "{{.CODEX_SKILLS_DIR}}/{{.SKILL_NAME}}"
+      - cp "commands/{{.COMMAND_NAME}}.md" "{{.CODEX_PROMPTS_DIR}}/{{.COMMAND_NAME}}.md"
+
+  install:claude:
+    desc: Install the skill into the local Claude Code skills directory
+    deps: [build]
+    cmds:
+      - mkdir -p "{{.CLAUDE_SKILLS_DIR}}"
+      - rm -rf "{{.CLAUDE_SKILLS_DIR}}/{{.SKILL_NAME}}"
+      - cp -R "{{.BUILD_DIR}}" "{{.CLAUDE_SKILLS_DIR}}/{{.SKILL_NAME}}"
+
+  install:forge:
+    desc: Install the skill into the local ForgeCode skills directory
+    deps: [build]
+    cmds:
+      - mkdir -p "{{.FORGE_SKILLS_DIR}}"
+      - rm -rf "{{.FORGE_SKILLS_DIR}}/{{.SKILL_NAME}}"
+      - cp -R "{{.BUILD_DIR}}" "{{.FORGE_SKILLS_DIR}}/{{.SKILL_NAME}}"
+
+  install:claude-command:
+    desc: Install the Claude Code /gm-refactor command compatibility prompt
+    cmds:
+      - mkdir -p "{{.CLAUDE_COMMANDS_DIR}}"
+      - cp "commands/{{.COMMAND_NAME}}.md" "{{.CLAUDE_COMMANDS_DIR}}/{{.COMMAND_NAME}}.md"
+
+  verify:
+    desc: Verify the built skill package and command source
+    deps: [build]
+    cmds:
+      - test -f "{{.BUILD_DIR}}/SKILL.md"
+      - test -f "{{.BUILD_DIR}}/commands/{{.COMMAND_NAME}}.md"
+      - cmp -s "commands/{{.COMMAND_NAME}}.md" "{{.BUILD_DIR}}/commands/{{.COMMAND_NAME}}.md"
+      - "grep -q '^name: {{.SKILL_NAME}}$' \"{{.BUILD_DIR}}/SKILL.md\""
+      - "grep -q '^description:' \"{{.BUILD_DIR}}/SKILL.md\""
+      - "grep -q '^description:' \"{{.BUILD_DIR}}/commands/{{.COMMAND_NAME}}.md\""
+
+  verify:codex:
+    desc: Verify the Codex skill installation and deprecated custom-prompt wrapper
+    cmds:
+      - test -f "{{.CODEX_SKILLS_DIR}}/{{.SKILL_NAME}}/SKILL.md"
+      - test -f "{{.CODEX_SKILLS_DIR}}/{{.SKILL_NAME}}/commands/{{.COMMAND_NAME}}.md"
+      - test -f "{{.CODEX_PROMPTS_DIR}}/{{.COMMAND_NAME}}.md"
+      - "grep -q '^name: {{.SKILL_NAME}}$' \"{{.CODEX_SKILLS_DIR}}/{{.SKILL_NAME}}/SKILL.md\""
+      - "grep -q '^description:' \"{{.CODEX_SKILLS_DIR}}/{{.SKILL_NAME}}/commands/{{.COMMAND_NAME}}.md\""
+      - cmp -s "commands/{{.COMMAND_NAME}}.md" "{{.CODEX_PROMPTS_DIR}}/{{.COMMAND_NAME}}.md"
+
+  verify:claude:
+    desc: Verify the Claude Code skill installation
+    cmds:
+      - test -f "{{.CLAUDE_SKILLS_DIR}}/{{.SKILL_NAME}}/SKILL.md"
+      - "grep -q '^name: {{.SKILL_NAME}}$' \"{{.CLAUDE_SKILLS_DIR}}/{{.SKILL_NAME}}/SKILL.md\""
+
+  verify:forge:
+    desc: Verify the ForgeCode installation
+    cmds:
+      - test -f "{{.FORGE_SKILLS_DIR}}/{{.SKILL_NAME}}/SKILL.md"
+      - "grep -q '^name: {{.SKILL_NAME}}$' \"{{.FORGE_SKILLS_DIR}}/{{.SKILL_NAME}}/SKILL.md\""
+
+  verify:claude-command:
+    desc: Verify the Claude Code /gm-refactor command installation
+    cmds:
+      - test -f "{{.CLAUDE_COMMANDS_DIR}}/{{.COMMAND_NAME}}.md"
+      - cmp -s "commands/{{.COMMAND_NAME}}.md" "{{.CLAUDE_COMMANDS_DIR}}/{{.COMMAND_NAME}}.md"
